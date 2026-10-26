@@ -3,13 +3,13 @@
 </p>
 
 <p align="center">
-  <img src="assets/banner.en.png" alt="opencode-deepseek-balance: DeepSeek balance and peak/off-peak pricing in the OpenCode sidebar" width="100%">
+  <img src="assets/banner.en.webp" alt="opencode-deepseek-balance: DeepSeek balance and peak/off-peak pricing in the OpenCode sidebar" width="100%">
 </p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square"></a>
   <a href="https://opencode.ai"><img alt="OpenCode >= 1.19" src="https://img.shields.io/badge/opencode-%E2%89%A51.19-111111?style=flat-square"></a>
-  <img alt="Version 0.2.0" src="https://img.shields.io/badge/version-0.2.0-2ea44f?style=flat-square">
+  <a href="https://www.npmjs.com/package/opencode-deepseek-balance"><img alt="npm" src="https://img.shields.io/npm/v/opencode-deepseek-balance?style=flat-square"></a>
 </p>
 
 <p align="center">
@@ -40,29 +40,16 @@ The `Peak` / `Off-peak` row shows the current billing window and how long is lef
 
 ## Install
 
-> [!WARNING]
-> Not published on npm yet. Install from a local clone for now.
+```bash
+opencode plugin opencode-deepseek-balance
+```
+
+Add `-g` to use the global config instead of the current project. Restart OpenCode after the command updates `tui.json`.
 
 > [!TIP]
-> The process is the same on macOS, Linux, and Windows. Use the absolute path in your system's format.
+> The process is the same on macOS, Linux, and Windows.
 
 Make sure DeepSeek is already configured in OpenCode (`opencode auth login`) or export `DEEPSEEK_API_KEY` before starting OpenCode.
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/mil0thedev/opencode-deepseek-balance.git
-   ```
-
-2. Register the plugin with OpenCode:
-
-   ```bash
-   opencode plugin /absolute/path/to/opencode-deepseek-balance
-   ```
-
-   Add `-g` to use the global config instead of the current project.
-
-3. Restart OpenCode. The plugin appears in the session sidebar.
 
 > [!IMPORTANT]
 > Your API key stays local. The plugin sends it only to `api.deepseek.com` over HTTPS, never logs or displays it, and makes no third-party requests.

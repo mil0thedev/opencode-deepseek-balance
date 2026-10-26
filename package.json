@@ -28,10 +28,14 @@
   "files": [
     "dist",
     "src",
+    "assets",
     "README.md",
     "README.es.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "opencode": "^1.19.0"
   },

@@ -3,13 +3,13 @@
 </p>
 
 <p align="center">
-  <img src="assets/banner.es.png" alt="opencode-deepseek-balance: saldo de DeepSeek y tarifa pico/valle en la barra lateral de OpenCode" width="100%">
+  <img src="assets/banner.es.webp" alt="opencode-deepseek-balance: saldo de DeepSeek y tarifa pico/valle en la barra lateral de OpenCode" width="100%">
 </p>
 
 <p align="center">
   <a href="LICENSE"><img alt="Licencia: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square"></a>
   <a href="https://opencode.ai"><img alt="OpenCode >= 1.19" src="https://img.shields.io/badge/opencode-%E2%89%A51.19-111111?style=flat-square"></a>
-  <img alt="Versión 0.2.0" src="https://img.shields.io/badge/version-0.2.0-2ea44f?style=flat-square">
+  <a href="https://www.npmjs.com/package/opencode-deepseek-balance"><img alt="npm" src="https://img.shields.io/npm/v/opencode-deepseek-balance?style=flat-square"></a>
 </p>
 
 <p align="center">
@@ -40,29 +40,16 @@ La fila `Peak` / `Off-peak` muestra la ventana de facturación vigente y cuánto
 
 ## Instalación
 
-> [!WARNING]
-> Todavía no está publicado en npm. Instálalo desde un clon local por ahora.
+```bash
+opencode plugin opencode-deepseek-balance
+```
+
+Añade `-g` para usar la configuración global en lugar del proyecto actual. Reinicia OpenCode después de que el comando actualice `tui.json`.
 
 > [!TIP]
-> El proceso es el mismo en macOS, Linux y Windows. Usa la ruta absoluta con el formato de tu sistema.
+> El proceso es el mismo en macOS, Linux y Windows.
 
 Asegúrate de que DeepSeek ya esté configurado en OpenCode (`opencode auth login`) o exporta `DEEPSEEK_API_KEY` antes de iniciar OpenCode.
-
-1. Clona el repositorio:
-
-   ```bash
-   git clone https://github.com/mil0thedev/opencode-deepseek-balance.git
-   ```
-
-2. Registra el plugin en OpenCode:
-
-   ```bash
-   opencode plugin /ruta/absoluta/a/opencode-deepseek-balance
-   ```
-
-   Añade `-g` para usar la configuración global en lugar del proyecto actual.
-
-3. Reinicia OpenCode. El plugin aparece en la barra lateral de la sesión.
 
 > [!IMPORTANT]
 > Tu clave API se queda local. El plugin solo la envía a `api.deepseek.com` por HTTPS, nunca la registra ni la muestra, y no hace peticiones a terceros.
