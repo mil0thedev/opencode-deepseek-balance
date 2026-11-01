@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "opencode-deepseek-balance",
-  "version": "0.3.0",
-  "description": "DeepSeek balance and peak/off-peak pricing in your OpenCode TUI sidebar.",
+  "version": "0.4.0",
+  "description": "DeepSeek balance and peak/off-peak pricing in your OpenCode v2 TUI sidebar.",
   "type": "module",
   "license": "MIT",
   "author": "MiloTheDev (https://github.com/mil0thedev)",
@@ -18,11 +18,13 @@
     "opencode",
     "opencode-plugin",
     "opencode-tui-plugin",
+    "opencode-v2",
     "deepseek",
     "balance",
     "tui"
   ],
   "exports": {
+    ".": "./dist/index.js",
     "./tui": "./dist/tui.js"
   },
   "files": [
@@ -39,30 +41,27 @@
     "access": "public"
   },
   "engines": {
-    "opencode": "^1.19.0"
+    "opencode": ">=2.2.5"
   },
   "scripts": {
     "build": "babel src --out-dir dist --extensions \".ts,.tsx\" --source-maps",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test test/balance.test.ts test/peak.test.ts test/retry.test.ts test/version.test.ts",
+    "test": "node --experimental-strip-types --test test/balance.test.ts test/peak.test.ts test/retry.test.ts test/version.test.ts test/package.test.ts test/tui.test.ts test/tui-lifecycle.test.ts",
+    "pretest": "npm run build",
     "prepack": "npm run build",
     "check": "npm run typecheck && npm test && npm run build"
   },
   "peerDependencies": {
-    "@opencode-ai/plugin": ">=1.19.0",
-    "@opentui/core": ">=0.4.5",
-    "@opentui/keymap": ">=0.4.5",
-    "@opentui/solid": ">=0.4.5",
-    "solid-js": ">=1.9.0"
+    "@opencode/plugin": ">=2.2.5 <3",
+    "@opentui/core": ">=0.8.0 <0.9",
+    "@opentui/solid": ">=0.8.0 <0.9",
+    "solid-js": ">=1.9.12 <2"
   },
   "peerDependenciesMeta": {
-    "@opencode-ai/plugin": {
+    "@opencode/plugin": {
       "optional": true
     },
     "@opentui/core": {
-      "optional": true
-    },
-    "@opentui/keymap": {
       "optional": true
     },
     "@opentui/solid": {
@@ -76,13 +75,13 @@
     "@babel/cli": "^7.28.0",
     "@babel/core": "^7.28.0",
     "@babel/preset-typescript": "^7.27.1",
-    "@opencode-ai/plugin": "^1.19.4",
-    "@opentui/core": "0.4.5",
-    "@opentui/keymap": "0.4.5",
-    "@opentui/solid": "0.4.5",
+    "@opencode/plugin": "^2.2.5",
+    "@opencode/theme": "2.2.5",
+    "@opentui/core": "^0.8.1",
+    "@opentui/solid": "^0.8.1",
     "@types/node": "^24.0.0",
     "babel-preset-solid": "1.9.12",
-    "solid-js": "1.9.12",
+    "solid-js": "^1.9.18",
     "typescript": "^5.8.2"
   }
 }

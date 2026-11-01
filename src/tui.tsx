@@ -1,5 +1,6 @@
 /** @jsxImportSource @opentui/solid */
-import type { TuiPluginApi, TuiPluginModule } from "@opencode-ai/plugin/tui"
+import { Plugin } from "@opencode/plugin/tui"
+import type { Context } from "@opencode/plugin/tui/context"
 import { createSignal } from "solid-js"
 import {
   BalanceError,
@@ -26,7 +27,7 @@ import { readPluginVersion } from "./version.js"
 const REFRESH_MS = 60_000
 const REFRESH_JITTER_MS = 5_000
 const CLOCK_MS = 30_000
-const CACHE_KEY = "opencode-deepseek-balance.balance"
+const STORAGE_KEY = "balance"
 const LABEL_WIDTH = 10
 
 type ViewState =
@@ -34,6 +35,10 @@ type ViewState =
   | { status: "ready"; balance: Balance; updatedAt: number }
   | { status: "stale"; balance: Balance; updatedAt: number; error?: BalanceError }
   | { status: "error"; error: BalanceError }
+
+type CacheStore = {
+  cache: BalanceCache | null
+}
 
 function formatAge(updatedAt: number, now: Date): string {
   const seconds = Math.max(0, Math.floor((now.getTime() - updatedAt) / 1_000))
@@ -61,14 +66,16 @@ function errorLabel(error: BalanceError): string {
   return labels[error.kind]
 }
 
-const tui = async (api: TuiPluginApi) => {
+/**
+ * Starts the sidebar widget. Only the TUI entrypoint calls this function; the
+ * server entrypoint stays a no-op and never imports this module statically.
+ */
+export const start = (context: Context) => {
   const version = readPluginVersion()
-  let cached: unknown
-  try {
-    cached = api.kv.get<unknown>(CACHE_KEY)
-  } catch {
-    cached = undefined
-  }
+  const [stored, updateStored] = context.storage.store<CacheStore>(STORAGE_KEY, {
+    initial: { cache: null },
+  })
+  const cached = stored.cache
   const initial: ViewState = isBalanceCache(cached)
     ? { status: "stale", balance: cached.balance, updatedAt: cached.updatedAt }
     : { status: "loading" }
@@ -115,11 +122,11 @@ const tui = async (api: TuiPluginApi) => {
         const updatedAt = Date.now()
         setState({ status: "ready", balance, updatedAt })
         const cache: BalanceCache = { balance, updatedAt }
-        try {
-          api.kv.set(CACHE_KEY, cache)
-        } catch {
+        void updateStored((draft) => {
+          draft.cache = cache
+        }).catch(() => {
           // The cache is an optimization; a write failure must not hide a valid balance.
-        }
+        })
         return
       } catch (error) {
         const balanceError =
@@ -188,132 +195,134 @@ const tui = async (api: TuiPluginApi) => {
 
   void runRefresh()
   clockTimer = setTimeout(tick, CLOCK_MS)
-  const offIdle = api.event.on("session.idle", () => void runRefresh())
+  const offIdle = context.data.on("session.idle", () => void runRefresh())
 
-  api.lifecycle.onDispose(() => {
+  const unregister = context.ui.slot({
+    append: "sidebar.footer",
+    render: () => {
+      const theme = context.theme
+
+      const statusColor = () => {
+        const current = state()
+        if (current.status === "error") return theme.text.feedback.error.base
+        if (current.status === "stale" && current.error) return theme.text.feedback.warning.base
+        return theme.text.muted
+      }
+
+      const statusText = () => {
+        const current = state()
+        if (current.status === "loading") return "checking…"
+        if (current.status === "error") return "retrying"
+        const age = formatAge(current.updatedAt, now())
+        if (current.status === "stale") {
+          return current.error ? `${errorLabel(current.error)} · ${age}` : `cached · ${age}`
+        }
+        return version ? `${version}` : `updated ${age}`
+      }
+
+      const balanceText = () => {
+        const current = state()
+        if (current.status === "loading") return "…"
+        if (current.status === "error") return errorLabel(current.error)
+        if (!current.balance.isAvailable) return "insufficient"
+        const entry = primaryEntry(current.balance)
+        return entry ? formatMoney(entry.total, entry.currency) : "n/a"
+      }
+
+      const balanceColor = () => {
+        const current = state()
+        if (current.status === "loading") return theme.text.muted
+        if (current.status === "error") return theme.text.feedback.error.base
+        if (!current.balance.isAvailable) return theme.text.feedback.error.base
+        if (current.status === "stale") return theme.text.feedback.warning.base
+        return theme.text.feedback.success.base
+      }
+
+      const billing = () => billingState(now())
+      const holiday = () => holidayFor(now())
+      const peakLabel = () => {
+        if (billing() === "peak") return "Peak"
+        if (billing() === "holiday") return holiday()?.provisional ? "Holiday*" : "Holiday"
+        return "Off-peak"
+      }
+      const peakColor = () =>
+        billing() === "peak" ? theme.text.feedback.warning.base : theme.text.feedback.success.base
+      const price = () => {
+        const mode = billing()
+        return mode === "peak" ? "2× rate" : mode === "holiday" ? "off-peak all day" : "50% off"
+      }
+      const next = () => {
+        const change = nextPeakChange(now())
+        if (!change) return undefined
+        const peak = billingState(change) === "peak"
+        return {
+          label: peak ? "→ Peak" : "→ Off-peak",
+          color: peak ? theme.text.feedback.warning.base : theme.text.feedback.success.base,
+          detail: `${countdown(change, now())} · ${formatChangeTime(change, now())}`,
+        }
+      }
+      const calendarNote = () => {
+        const status = holidayCalendarStatus(now())
+        if (status === "missing") return "holiday calendar outdated"
+        if (status === "provisional" && billing() === "holiday") return "holiday dates provisional"
+        return undefined
+      }
+
+      return (
+        <box flexDirection="column" flexShrink={0}>
+          <box flexDirection="row" gap={1} flexShrink={0}>
+            <text fg={theme.text.base}>
+              <strong>DeepSeek Usage</strong>
+            </text>
+            <text fg={statusColor()} opacity={0.7} selectable={false}>
+              {statusText()}
+            </text>
+          </box>
+          <box flexDirection="row" gap={1} flexShrink={0}>
+            <text fg={theme.text.muted} width={LABEL_WIDTH}>
+              DeepSeek
+            </text>
+            <text fg={balanceColor()}>{balanceText()}</text>
+          </box>
+          <box flexDirection="row" gap={1} flexShrink={0}>
+            <text fg={peakColor()} width={LABEL_WIDTH}>
+              {peakLabel()}
+            </text>
+            <text fg={theme.text.muted}>{price()}</text>
+          </box>
+          {(() => {
+            const change = next()
+            if (!change) return null
+            return (
+              <box flexDirection="row" gap={1} flexShrink={0}>
+                <text fg={change.color} width={LABEL_WIDTH}>
+                  {change.label}
+                </text>
+                <text fg={theme.text.muted}>{change.detail}</text>
+              </box>
+            )
+          })()}
+          {calendarNote() ? (
+            <text fg={theme.text.feedback.warning.base} opacity={0.8}>
+              {calendarNote()}
+            </text>
+          ) : null}
+        </box>
+      )
+    },
+  })
+
+  return () => {
     disposed = true
     if (timer) clearTimeout(timer)
     if (clockTimer) clearTimeout(clockTimer)
     controller?.abort()
     offIdle()
-  })
-
-  api.slots.register({
-    order: 95,
-    slots: {
-      sidebar_footer() {
-        const statusColor = () => {
-          const current = state()
-          if (current.status === "error") return api.theme.current.error
-          if (current.status === "stale" && current.error) return api.theme.current.warning
-          return api.theme.current.textMuted
-        }
-
-        const statusText = () => {
-          const current = state()
-          if (current.status === "loading") return "checking…"
-          if (current.status === "error") return "retrying"
-          const age = formatAge(current.updatedAt, now())
-          if (current.status === "stale") {
-            return current.error ? `${errorLabel(current.error)} · ${age}` : `cached · ${age}`
-          }
-          return version ? `${version}` : `updated ${age}`
-        }
-
-        const balanceText = () => {
-          const current = state()
-          if (current.status === "loading") return "…"
-          if (current.status === "error") return errorLabel(current.error)
-          if (!current.balance.isAvailable) return "insufficient"
-          const entry = primaryEntry(current.balance)
-          return entry ? formatMoney(entry.total, entry.currency) : "n/a"
-        }
-
-        const balanceColor = () => {
-          const current = state()
-          if (current.status === "loading") return api.theme.current.textMuted
-          if (current.status === "error") return api.theme.current.error
-          if (!current.balance.isAvailable) return api.theme.current.error
-          if (current.status === "stale") return api.theme.current.warning
-          return api.theme.current.success
-        }
-
-        const billing = () => billingState(now())
-        const holiday = () => holidayFor(now())
-        const peakLabel = () => {
-          if (billing() === "peak") return "Peak"
-          if (billing() === "holiday") return holiday()?.provisional ? "Holiday*" : "Holiday"
-          return "Off-peak"
-        }
-        const peakColor = () => billing() === "peak" ? api.theme.current.warning : api.theme.current.success
-        const price = () => {
-          const mode = billing()
-          return mode === "peak" ? "2× rate" : mode === "holiday" ? "off-peak all day" : "50% off"
-        }
-        const next = () => {
-          const change = nextPeakChange(now())
-          if (!change) return undefined
-          const peak = billingState(change) === "peak"
-          return {
-            label: peak ? "→ Peak" : "→ Off-peak",
-            color: peak ? api.theme.current.warning : api.theme.current.success,
-            detail: `${countdown(change, now())} · ${formatChangeTime(change, now())}`,
-          }
-        }
-        const calendarNote = () => {
-          const status = holidayCalendarStatus(now())
-          if (status === "missing") return "holiday calendar outdated"
-          if (status === "provisional" && billing() === "holiday") return "holiday dates provisional"
-          return undefined
-        }
-
-        return (
-          <box flexDirection="column" flexShrink={0}>
-            <box flexDirection="row" gap={1} flexShrink={0}>
-              <text fg={api.theme.current.text}>
-                <strong>DeepSeek Usage</strong>
-              </text>
-              <text fg={statusColor()} opacity={0.7} selectable={false}>
-                {statusText()}
-              </text>
-            </box>
-            <box flexDirection="row" gap={1} flexShrink={0}>
-              <text fg={api.theme.current.textMuted} width={LABEL_WIDTH}>
-                DeepSeek
-              </text>
-              <text fg={balanceColor()}>{balanceText()}</text>
-            </box>
-            <box flexDirection="row" gap={1} flexShrink={0}>
-              <text fg={peakColor()} width={LABEL_WIDTH}>
-                {peakLabel()}
-              </text>
-              <text fg={api.theme.current.textMuted}>{price()}</text>
-            </box>
-            {(() => {
-              const change = next()
-              if (!change) return null
-              return (
-                <box flexDirection="row" gap={1} flexShrink={0}>
-                  <text fg={change.color} width={LABEL_WIDTH}>
-                    {change.label}
-                  </text>
-                  <text fg={api.theme.current.textMuted}>{change.detail}</text>
-                </box>
-              )
-            })()}
-            {calendarNote() ? (
-              <text fg={api.theme.current.warning} opacity={0.8}>
-                {calendarNote()}
-              </text>
-            ) : null}
-          </box>
-        )
-      },
-    },
-  })
+    unregister()
+  }
 }
 
-export default {
+export default Plugin.define({
   id: "deepseek-balance",
-  tui,
-} satisfies TuiPluginModule
+  setup: start,
+})

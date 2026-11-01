@@ -2,13 +2,13 @@
 
 Working document for `opencode-deepseek-balance`. The vision is to move from a balance widget to a **DeepSeek spend control center**: balance, trend, per-session spend, budget, holidays, and alerts.
 
-- Baseline: `0.2.0`.
-- Current release: `0.3.0`.
-- Scope of this release: billing accuracy, robustness, packaging, and test fixes.
+- Baseline: `0.3.0`.
+- Current release: `0.4.0`.
+- Scope of this release: OpenCode V2-only migration, packaging, and docs.
 - Product features remain documented and marked as pending.
 - Legend: `[x]` implemented, `[ ]` pending.
 
-**Compatibility vision.** The plugin should be compatible with both OpenCode 1.x and OpenCode 2.x for a short period of time: a single codebase that runs on both lines during a brief transition window, instead of two permanently divergent releases.
+**Compatibility vision.** The plugin targets OpenCode V2 only. OpenCode 1.x is no longer supported and there is no dual-compatibility window. If a 1.x build is requested, it can be produced from the `0.3.0` tag.
 
 ## 1. Implemented fixes
 
@@ -28,7 +28,7 @@ Working document for `opencode-deepseek-balance`. The vision is to move from a b
 
 ### State, cache, and errors
 
-- [x] **Last balance persisted.** Balance and timestamp are stored in `api.kv`; on startup OpenCode shows it immediately as cached data.
+- [x] **Last balance persisted.** Balance and timestamp are stored in `context.storage.store`; on startup OpenCode shows it immediately as cached data.
 - [x] **Balance survives a network failure.** If a balance was already known, it is kept in a `stale` state together with its age.
 - [x] **Version and data age.** The header shows the plugin version; in the `stale` state it appends `cached · 2m ago` or the current error.
 - [x] **Typed errors.** `BalanceError` distinguishes `no-key`, `unauthorized`, `insufficient`, `rate-limited`, `network`, `timeout`, `server`, `http`, `invalid-response`, and `aborted`.
@@ -68,7 +68,8 @@ Working document for `opencode-deepseek-balance`. The vision is to move from a b
 
 ### Packaging and tests
 
-- [x] **Peer dependencies.** `solid-js`, `@opentui/core`, `@opentui/keymap`, `@opentui/solid`, and `@opencode-ai/plugin` are declared as optional peers.
+- [x] **Peer dependencies.** `solid-js`, `@opentui/core`, `@opentui/solid`, and `@opencode/plugin` are declared as optional peers with V2 ranges.
+- [x] **V2 setup test.** A mock TUI context verifies the `sidebar.footer` claim, the `session.idle` subscription, cleanup, and the no-op server context.
 - [x] **Balance tests.** Parsing, multiple currencies, breakdown, `is_available`, invalid JSON, 401, 429, 500, abort, and timeout.
 - [x] **Credential tests.** Auth/env precedence, trim, malformed file, and empty values.
 - [x] **Holiday tests.** Chinese holidays, China/UTC boundary, official/provisional/missing calendar, and holiday skipping.
@@ -98,7 +99,7 @@ Working document for `opencode-deepseek-balance`. The vision is to move from a b
 
 ### Spend and budget
 
-- [ ] Current session spend using `message.cost` on the 1.19 API or `context.data.session.cost` on OpenCode V2.
+- [ ] Current session spend using `context.data.session.cost`.
 - [ ] Aggregated daily spend.
 - [ ] Breakdown by model and by peak/off-peak window.
 - [ ] Soft per-session budget.
@@ -129,7 +130,7 @@ Working document for `opencode-deepseek-balance`. The vision is to move from a b
 - [ ] Privacy mode.
 - [ ] Show or hide session spend.
 - [ ] Notifications by type.
-- [ ] Persist settings with `api.kv` or `context.storage`.
+- [ ] Persist settings with `context.storage`.
 - [ ] Validate and migrate the configuration schema.
 - [ ] Document every option in the README.
 
@@ -207,34 +208,34 @@ Working document for `opencode-deepseek-balance`. The vision is to move from a b
 
 ## 4. OpenCode V2 migration
 
-The repo uses `@opencode-ai/plugin@1.19.4` and OpenTUI `0.4.5`. OpenCode V2 uses `@opencode/plugin@2.x` and OpenTUI `>=0.6.8`.
+The plugin targets OpenCode V2 only. It uses `@opencode/plugin@2.x`, OpenTUI `>=0.8.0`, and the V2 TUI context. OpenCode 1.x is no longer supported; the last 1.x-compatible release is `0.3.0`.
 
-**Compatibility approach.** The plugin's vision is to be compatible with OpenCode 1.x and OpenCode 2.x at the same time for a short period of time. This is a transition window, not a permanent commitment: once the V2 API is stable, V2 becomes the primary target and 1.x support is dropped.
+**Vision.** V2 is the only supported target. There is no dual-compatibility window and no parallel 1.x branch. If a 1.x build is requested, produce it from the `0.3.0` tag.
 
-- [ ] Keep dual compatibility with OpenCode 1.x and 2.x during a short transition period.
-- [ ] Migrate `TuiPluginApi` to `Context` + `Plugin.define`.
-- [ ] Migrate `api.slots.register` to `context.ui.slot`.
-- [ ] Migrate `api.event.on` to `context.data.on`.
-- [ ] Migrate `api.lifecycle.onDispose` to the cleanup returned by `setup`.
-- [ ] Migrate `api.kv` to `context.storage`.
-- [ ] Migrate `api.theme.current` to `context.theme`.
-- [ ] Migrate `api.command` to `context.keymap.layer`.
+- [x] Target OpenCode 2.x only and drop the V1 plugin API.
+- [x] Migrate `TuiPluginApi` to `Context` + `Plugin.define`.
+- [x] Migrate `api.slots.register` to `context.ui.slot`.
+- [x] Migrate `api.event.on` to `context.data.on`.
+- [x] Migrate `api.lifecycle.onDispose` to the cleanup returned by `setup`.
+- [x] Migrate `api.kv` to `context.storage.store`.
+- [x] Migrate `api.theme.current` to `context.theme` semantic tokens.
+- [x] Update `engines.opencode`, peer dependencies, and package entrypoints.
+- [x] Keep the package loadable from `cli.json` and from `opencode.json`; the server context is a no-op.
+- [x] Add a mock-context test for setup, the slot claim, and cleanup.
 - [ ] Use `context.data.session.cost` for session spend.
 - [ ] Use `session.panel` for the dashboard.
-- [ ] Add a main `"."` entrypoint in addition to `"./tui"`.
-- [ ] Add the server entrypoint if the agent tool is implemented.
-- [ ] Update `engines.opencode` and the peer dependencies.
-- [ ] Publish a separate major and keep a 1.x branch only if the transition requires it.
+- [ ] Add the agent tool in a server entrypoint if it is implemented.
+- [ ] Register commands with `context.keymap.layer` when the `/deepseek` panel lands.
 
 ## 5. Indicative roadmap
 
 | Version | Theme | Content |
 |---|---|---|
 | `0.3` | Trust | Holidays, countdown, local time, typed errors, cache, timeout, backoff, peers, and tests |
-| `0.4` | Control | `/deepseek` panel, manual refresh, settings, session spend, and alerts |
-| `0.5` | Insights | History, sparkline, runway, cache hit rate, currencies, privacy, and i18n |
+| `0.4` | OpenCode V2 | V2-only migration: plugin API, packaging, storage, docs, and tests |
+| `0.5` | Control | `/deepseek` panel, manual refresh, settings, session spend, and alerts |
+| `0.6` | Insights | History, sparkline, runway, cache hit rate, currencies, privacy, and i18n |
 | `1.0` | Stability | Documentation, coverage, release automation, and validated configuration |
-| `2.0` | OpenCode V2 | API migration, `session.panel`, storage, agent tool, and multi-account |
 
 ## 6. Technical decisions
 
@@ -256,8 +257,8 @@ The repo uses `@opencode-ai/plugin@1.19.4` and OpenTUI `0.4.5`. OpenCode V2 uses
 
 ### Balance cache
 
-- Key: `opencode-deepseek-balance.balance`.
-- Stores `{ balance, updatedAt }`.
+- Key: `balance`, scoped by the plugin id in `context.storage`.
+- Stores `{ cache: { balance, updatedAt } }`.
 - An invalid or older-version cache is ignored.
 - A cache write failure does not hide a valid balance.
 
@@ -289,8 +290,8 @@ npm run build
 Result for this release:
 
 - [x] `npm run typecheck` with no errors.
-- [x] `npm test` with 31 passing tests.
-- [x] `npm run build` compiles the five files in `src`.
+- [x] `npm test` with 39 passing tests.
+- [x] `npm run build` compiles the six files in `src`.
 - [x] Full `npm run check` on local Node 24.
 - [x] `npm pack --dry-run` reviewed.
 - [ ] CI green on GitHub Actions.
@@ -326,4 +327,5 @@ Result for this release:
 - [ ] Official holidays for the current year.
 - [ ] UI and integration tests.
 - [ ] README with configuration and updated screenshots.
-- [ ] OpenCode 1.x and 2.x verified end to end during the transition window, then 1.x support removed once V2 is stable.
+- [x] OpenCode 1.x support removed.
+- [ ] OpenCode 2.x verified end to end in a real terminal.

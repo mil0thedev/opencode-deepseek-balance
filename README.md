@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square"></a>
-  <a href="https://opencode.ai"><img alt="OpenCode >= 1.19" src="https://img.shields.io/badge/opencode-%E2%89%A51.19-111111?style=flat-square"></a>
+  <a href="https://opencode.ai"><img alt="OpenCode 2.x" src="https://img.shields.io/badge/opencode-2.x-111111?style=flat-square"></a>
   <a href="https://www.npmjs.com/package/opencode-deepseek-balance"><img alt="npm" src="https://img.shields.io/npm/v/opencode-deepseek-balance?style=flat-square"></a>
 </p>
 
@@ -25,7 +25,7 @@ The pricing row follows DeepSeek's UTC billing windows: `01:00–04:00` and `06:
 ## Preview
 
 ```text
-DeepSeek Usage 0.3.0
+DeepSeek Usage 0.4.0
 DeepSeek   $9.98
 Off-peak   50% off
 → Peak     3h 03m · 21:30
@@ -47,11 +47,15 @@ The `Peak` / `Off-peak` / `Holiday` row shows the current billing window and its
 
 ## Install
 
+Requires OpenCode 2.x. OpenCode 1.x is not supported; install `opencode-deepseek-balance@0.3.0` if you still run 1.x.
+
 ```bash
-opencode plugin opencode-deepseek-balance
+opencode plugin add opencode-deepseek-balance
 ```
 
-Add `-g` to use the global config instead of the current project. Restart OpenCode after the command updates `tui.json`.
+This adds the package to your global OpenCode configuration, and OpenCode loads its TUI entrypoint automatically. Run `/reload` if the sidebar does not update.
+
+If you keep TUI-only plugins in `~/.config/opencode/cli.json`, add `"opencode-deepseek-balance"` to its `plugins` array instead. Do not add it to both the server configuration and `cli.json`, or the block appears twice.
 
 > [!TIP]
 > The process is the same on macOS, Linux, and Windows.
@@ -75,7 +79,7 @@ If the calendar warning appears, update the plugin to get the latest dates. The 
 
 | Symptom | What to check |
 |---|---|
-| The block does not appear | Restart OpenCode and confirm the path registered in `tui.json`. |
+| The block does not appear | Confirm the package is in `opencode.json` or `cli.json`, then run `/reload`. |
 | `checking…` | The first balance request is still pending; wait a few seconds. |
 | `no key` | DeepSeek is not configured in OpenCode and `DEEPSEEK_API_KEY` is not set. |
 | `invalid key` | The saved key was rejected. Run `opencode auth login` again or replace `DEEPSEEK_API_KEY`. |
@@ -87,7 +91,7 @@ If the calendar warning appears, update the plugin to get the latest dates. The 
 | `Holiday*` or `holiday dates provisional` | The 2027 calendar is provisional; update the plugin after the official schedule is published. |
 | `holiday calendar outdated` | The calendar has no data for the current year. Update the plugin. |
 | The balance does not update immediately | The normal refresh is every 60 seconds; `session.idle` also requests one. |
-| Two identical blocks appear | The plugin is registered in both the global and project `tui.json`; keep it in one scope. |
+| Two identical blocks appear | The plugin is registered in both `opencode.json` and `cli.json`; keep it in one place. |
 
 ## Roadmap
 

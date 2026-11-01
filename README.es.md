@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="Licencia: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square"></a>
-  <a href="https://opencode.ai"><img alt="OpenCode >= 1.19" src="https://img.shields.io/badge/opencode-%E2%89%A51.19-111111?style=flat-square"></a>
+  <a href="https://opencode.ai"><img alt="OpenCode 2.x" src="https://img.shields.io/badge/opencode-2.x-111111?style=flat-square"></a>
   <a href="https://www.npmjs.com/package/opencode-deepseek-balance"><img alt="npm" src="https://img.shields.io/npm/v/opencode-deepseek-balance?style=flat-square"></a>
 </p>
 
@@ -25,7 +25,7 @@ La fila de precio sigue las ventanas UTC de DeepSeek: `01:00–04:00` y `06:00�
 ## Vista previa
 
 ```text
-DeepSeek Usage 0.3.0
+DeepSeek Usage 0.4.0
 DeepSeek   $9.98
 Off-peak   50% off
 → Peak     3h 03m · 21:30
@@ -47,11 +47,15 @@ La fila `Peak` / `Off-peak` / `Holiday` muestra la ventana de facturación vigen
 
 ## Instalación
 
+Requiere OpenCode 2.x. OpenCode 1.x no es compatible; instala `opencode-deepseek-balance@0.3.0` si todavía usas 1.x.
+
 ```bash
-opencode plugin opencode-deepseek-balance
+opencode plugin add opencode-deepseek-balance
 ```
 
-Añade `-g` para usar la configuración global en lugar del proyecto actual. Reinicia OpenCode después de que el comando actualice `tui.json`.
+Esto añade el paquete a tu configuración global de OpenCode, y OpenCode carga su entrypoint TUI automáticamente. Ejecuta `/reload` si la barra lateral no se actualiza.
+
+Si mantienes plugins solo-TUI en `~/.config/opencode/cli.json`, añade `"opencode-deepseek-balance"` a su array `plugins` en su lugar. No lo añadas a la configuración del servidor y a `cli.json` a la vez, o el bloque aparecerá dos veces.
 
 > [!TIP]
 > El proceso es el mismo en macOS, Linux y Windows.
@@ -75,7 +79,7 @@ Si aparece el aviso del calendario, actualiza el plugin para obtener las fechas 
 
 | Síntoma | Qué revisar |
 |---|---|
-| El bloque no aparece | Reinicia OpenCode y confirma la ruta registrada en `tui.json`. |
+| El bloque no aparece | Confirma que el paquete está en `opencode.json` o `cli.json` y ejecuta `/reload`. |
 | `checking…` | La primera petición de saldo sigue pendiente; espera unos segundos. |
 | `no key` | DeepSeek no está configurado en OpenCode y `DEEPSEEK_API_KEY` no está definida. |
 | `invalid key` | La clave guardada fue rechazada. Ejecuta `opencode auth login` de nuevo o reemplaza `DEEPSEEK_API_KEY`. |
@@ -87,7 +91,7 @@ Si aparece el aviso del calendario, actualiza el plugin para obtener las fechas 
 | `Holiday*` o `holiday dates provisional` | El calendario de 2027 es provisional; actualiza el plugin cuando se publique el calendario oficial. |
 | `holiday calendar outdated` | El calendario no tiene datos para el año actual. Actualiza el plugin. |
 | El saldo no se actualiza al instante | El refresco normal es cada 60 segundos; `session.idle` también solicita uno. |
-| Aparecen dos bloques idénticos | El plugin está registrado en el `tui.json` global y en el del proyecto; déjalo en un solo alcance. |
+| Aparecen dos bloques idénticos | El plugin está registrado en `opencode.json` y en `cli.json`; déjalo en un solo lugar. |
 
 ## Roadmap
 

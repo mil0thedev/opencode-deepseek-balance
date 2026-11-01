@@ -2,13 +2,13 @@
 
 Documento de trabajo de `opencode-deepseek-balance`. La visión es pasar de un widget de saldo a un **centro de control de gasto DeepSeek**: saldo, tendencia, gasto por sesión, presupuesto, feriados y alertas.
 
-- Baseline: `0.2.0`.
-- Entrega actual: `0.3.0`.
-- Alcance de esta entrega: correcciones de precisión, robustez, empaquetado y pruebas.
+- Baseline: `0.3.0`.
+- Entrega actual: `0.4.0`.
+- Alcance de esta entrega: migración a OpenCode V2 única, empaquetado y documentación.
 - Las features de producto quedan documentadas y marcadas como pendientes.
 - Leyenda: `[x]` implementado, `[ ]` pendiente.
 
-**Visión de compatibilidad.** El plugin debe ser compatible con OpenCode 1.x y con OpenCode 2.x durante un lapso de tiempo corto: un solo código que funcione en ambas líneas durante una ventana breve de transición, en lugar de dos releases divergentes de forma permanente.
+**Visión de compatibilidad.** El plugin apunta solo a OpenCode V2. OpenCode 1.x ya no es compatible y no hay ventana de compatibilidad dual. Si se solicita una versión para 1.x, se puede generar desde el tag `0.3.0`.
 
 ## 1. Correcciones implementadas
 
@@ -28,7 +28,7 @@ Documento de trabajo de `opencode-deepseek-balance`. La visión es pasar de un w
 
 ### Estado, caché y errores
 
-- [x] **Último saldo persistido.** El saldo y su timestamp se guardan en `api.kv`; al abrir OpenCode se muestra inmediatamente como dato cacheado.
+- [x] **Último saldo persistido.** El saldo y su timestamp se guardan en `context.storage.store`; al abrir OpenCode se muestra inmediatamente como dato cacheado.
 - [x] **No se pierde el saldo ante un fallo de red.** Si ya había un saldo, se conserva con un estado `stale` y su antigüedad.
 - [x] **Versión y edad del dato.** La cabecera muestra la versión del plugin; en estado `stale` añade `cached · 2m ago` o el error actual.
 - [x] **Errores tipados.** `BalanceError` distingue `no-key`, `unauthorized`, `insufficient`, `rate-limited`, `network`, `timeout`, `server`, `http`, `invalid-response` y `aborted`.
@@ -68,7 +68,8 @@ Documento de trabajo de `opencode-deepseek-balance`. La visión es pasar de un w
 
 ### Empaquetado y pruebas
 
-- [x] **Peer dependencies.** `solid-js`, `@opentui/core`, `@opentui/keymap`, `@opentui/solid` y `@opencode-ai/plugin` quedan declarados como peers opcionales.
+- [x] **Peer dependencies.** `solid-js`, `@opentui/core`, `@opentui/solid` y `@opencode/plugin` quedan declarados como peers opcionales con rangos de V2.
+- [x] **Test de setup V2.** Un contexto TUI simulado verifica el claim de `sidebar.footer`, la suscripción a `session.idle`, el cleanup y el no-op del contexto de servidor.
 - [x] **Tests de balance.** Parseo, múltiples monedas, desglose, `is_available`, JSON inválido, 401, 429, 500, abort y timeout.
 - [x] **Tests de credenciales.** Precedencia auth/env, trim, archivo malformado y valores vacíos.
 - [x] **Tests de feriados.** Feriados chinos, frontera China/UTC, calendario oficial/provisional/ausente y salto de feriados.
@@ -98,7 +99,7 @@ Documento de trabajo de `opencode-deepseek-balance`. La visión es pasar de un w
 
 ### Gasto y presupuesto
 
-- [ ] Gasto de la sesión actual usando `message.cost` en la API 1.19 o `context.data.session.cost` en OpenCode V2.
+- [ ] Gasto de la sesión actual usando `context.data.session.cost`.
 - [ ] Gasto diario agregado.
 - [ ] Desglose por modelo y por ventana pico/valle.
 - [ ] Presupuesto suave por sesión.
@@ -129,7 +130,7 @@ Documento de trabajo de `opencode-deepseek-balance`. La visión es pasar de un w
 - [ ] Modo privacidad.
 - [ ] Mostrar u ocultar gasto de sesión.
 - [ ] Notificaciones por tipo.
-- [ ] Persistencia de ajustes con `api.kv` o `context.storage`.
+- [ ] Persistencia de ajustes con `context.storage`.
 - [ ] Validación y migración del esquema de configuración.
 - [ ] Documentar todas las opciones en el README.
 
@@ -207,34 +208,34 @@ Documento de trabajo de `opencode-deepseek-balance`. La visión es pasar de un w
 
 ## 4. Migración a OpenCode V2
 
-El repo usa `@opencode-ai/plugin@1.19.4` y OpenTUI `0.4.5`. OpenCode V2 usa `@opencode/plugin@2.x` y OpenTUI `>=0.6.8`.
+El plugin apunta solo a OpenCode V2. Usa `@opencode/plugin@2.x`, OpenTUI `>=0.8.0` y el contexto TUI de V2. OpenCode 1.x ya no es compatible; la última versión compatible con 1.x es `0.3.0`.
 
-**Enfoque de compatibilidad.** La visión del plugin es ser compatible con OpenCode 1.x y OpenCode 2.x a la vez durante un lapso de tiempo corto. Es una ventana de transición, no un compromiso permanente: cuando la API V2 sea estable, V2 pasa a ser el objetivo principal y se retira el soporte de 1.x.
+**Visión.** V2 es el único objetivo soportado. No hay ventana de compatibilidad dual ni rama paralela de 1.x. Si se solicita una versión para 1.x, se genera desde el tag `0.3.0`.
 
-- [ ] Mantener compatibilidad dual con OpenCode 1.x y 2.x durante un periodo corto de transición.
-- [ ] Migrar `TuiPluginApi` a `Context` + `Plugin.define`.
-- [ ] Migrar `api.slots.register` a `context.ui.slot`.
-- [ ] Migrar `api.event.on` a `context.data.on`.
-- [ ] Migrar `api.lifecycle.onDispose` al cleanup retornado por `setup`.
-- [ ] Migrar `api.kv` a `context.storage`.
-- [ ] Migrar `api.theme.current` a `context.theme`.
-- [ ] Migrar `api.command` a `context.keymap.layer`.
+- [x] Apuntar solo a OpenCode 2.x y retirar la API de plugins V1.
+- [x] Migrar `TuiPluginApi` a `Context` + `Plugin.define`.
+- [x] Migrar `api.slots.register` a `context.ui.slot`.
+- [x] Migrar `api.event.on` a `context.data.on`.
+- [x] Migrar `api.lifecycle.onDispose` al cleanup retornado por `setup`.
+- [x] Migrar `api.kv` a `context.storage.store`.
+- [x] Migrar `api.theme.current` a los tokens semánticos de `context.theme`.
+- [x] Actualizar `engines.opencode`, las peer dependencies y los entrypoints del paquete.
+- [x] Permitir cargar el paquete desde `cli.json` y desde `opencode.json`; el contexto de servidor es un no-op.
+- [x] Añadir un test con contexto simulado para setup, el slot y el cleanup.
 - [ ] Usar `context.data.session.cost` para el gasto de sesión.
 - [ ] Usar `session.panel` para el dashboard.
-- [ ] Añadir entrypoint principal `"."` además de `"./tui"`.
-- [ ] Añadir el entrypoint de servidor si se implementa el tool del agente.
-- [ ] Actualizar `engines.opencode` y las peer dependencies.
-- [ ] Publicar una major separada y mantener una rama 1.x solo si la transición lo exige.
+- [ ] Añadir el tool del agente en un entrypoint de servidor si se implementa.
+- [ ] Registrar comandos con `context.keymap.layer` cuando llegue el panel `/deepseek`.
 
 ## 5. Roadmap orientativo
 
 | Versión | Tema | Contenido |
 |---|---|---|
 | `0.3` | Confianza | Feriados, countdown, hora local, errores tipados, caché, timeout, backoff, peers y tests |
-| `0.4` | Control | Panel `/deepseek`, refresco manual, ajustes, gasto de sesión y alertas |
-| `0.5` | Insights | Historial, sparkline, autonomía, cache hit rate, monedas, privacidad e i18n |
+| `0.4` | OpenCode V2 | Migración a V2 única: API de plugins, empaquetado, storage, documentación y tests |
+| `0.5` | Control | Panel `/deepseek`, refresco manual, ajustes, gasto de sesión y alertas |
+| `0.6` | Insights | Historial, sparkline, autonomía, cache hit rate, monedas, privacidad e i18n |
 | `1.0` | Estabilidad | Documentación, cobertura, release automation y configuración validada |
-| `2.0` | OpenCode V2 | Migración de API, `session.panel`, storage, tool del agente y multi-cuenta |
 
 ## 6. Decisiones técnicas
 
@@ -256,8 +257,8 @@ El repo usa `@opencode-ai/plugin@1.19.4` y OpenTUI `0.4.5`. OpenCode V2 usa `@op
 
 ### Caché del saldo
 
-- Clave: `opencode-deepseek-balance.balance`.
-- Se guarda `{ balance, updatedAt }`.
+- Clave: `balance`, con alcance del id del plugin en `context.storage`.
+- Se guarda `{ cache: { balance, updatedAt } }`.
 - Un cache inválido o de una versión anterior se ignora.
 - Un fallo de escritura del cache no oculta un saldo válido.
 
@@ -289,8 +290,8 @@ npm run build
 Resultado de esta entrega:
 
 - [x] `npm run typecheck` sin errores.
-- [x] `npm test` con 31 pruebas aprobadas.
-- [x] `npm run build` compila los cinco archivos de `src`.
+- [x] `npm test` con 39 pruebas aprobadas.
+- [x] `npm run build` compila los seis archivos de `src`.
 - [x] `npm run check` completo con Node 24 local.
 - [x] `npm pack --dry-run` revisado.
 - [ ] CI verde en GitHub Actions.
@@ -326,4 +327,5 @@ Resultado de esta entrega:
 - [ ] Feriados oficiales del año en curso.
 - [ ] Tests de UI y de integración.
 - [ ] README con configuración y capturas actualizadas.
-- [ ] Compatibilidad con OpenCode 1.x y 2.x verificada de extremo a extremo durante la ventana de transición, y luego retirada la de 1.x cuando V2 sea estable.
+- [x] Soporte de OpenCode 1.x retirado.
+- [ ] OpenCode 2.x verificado de extremo a extremo en una terminal real.
